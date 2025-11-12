@@ -9,10 +9,14 @@ import SwiftUI
 
 struct EditView: View {
     @ObservedObject var store: StoreTask
-    @Binding var editingTask: Task?               // Binding<Task?> from ContentView
+    @Binding var editingTask: Task?
     var onDelete: (UUID) -> Void = { _ in }
 
-    @StateObject private var viewModel = EditTaskViewModel()
+    // 👇 bindings from ContentView
+    @Binding var hasUnsavedChanges: Bool
+    @Binding var viewModel: EditTaskViewModel?
+
+    @StateObject private var internalViewModel = EditTaskViewModel()
 
     var body: some View {
         Group {
@@ -22,35 +26,44 @@ struct EditView: View {
                 placeholder
             }
         }
-        .onAppear { configure(from: editingTask) }
-        .onChange(of: editingTask) { _, newValue in configure(from: newValue) }
+        .onAppear {
+            viewModel = internalViewModel
+            configure(from: editingTask)
+        }
+        .onChange(of: editingTask) { _, newValue in
+            configure(from: newValue)
+        }
+        .onChange(of: internalViewModel.draftTask) { _, _ in
+            // track unsaved edits continuously
+            hasUnsavedChanges = internalViewModel.hasUnsavedChanges()
+        }
     }
 
-    // MARK: - Editor Body split for compiler
+    // MARK: - Editor Body
     private var editorBody: some View {
         VStack(spacing: 0) {
             ScrollView {
                 VStack(alignment: .leading, spacing: 22) {
                     EditHeaderView(
-                        task: viewModel.draftTask,
-                        isEditing: $viewModel.isEditing,
-                        titleBinding: viewModel.binding(\.title),
-                        now: $viewModel.now
+                        task: internalViewModel.draftTask,
+                        isEditing: $internalViewModel.isEditing,
+                        titleBinding: internalViewModel.binding(\.title),
+                        now: $internalViewModel.now
                     )
 
                     Divider()
 
                     EditSections(
-                        task: viewModel.draftTask,
-                        isEditing: $viewModel.isEditing,
-                        draftTask: $viewModel.draftTask,      // Binding<Task> -> matches EditSections
-                        titleBinding: viewModel.binding(\.title),
-                        dueDateBinding: viewModel.binding(\.dueDate),
-                        dueTimeBinding: viewModel.binding(\.dueTime),
-                        statusBinding: viewModel.binding(\.status),
-                        descriptionBinding: viewModel.binding(\.description),
-                        remarksBinding: viewModel.binding(\.remarks),
-                        quickNotesBinding: viewModel.binding(\.quickNotes)
+                        task: internalViewModel.draftTask,
+                        isEditing: $internalViewModel.isEditing,
+                        draftTask: $internalViewModel.draftTask,
+                        titleBinding: internalViewModel.binding(\.title),
+                        dueDateBinding: internalViewModel.binding(\.dueDate),
+                        dueTimeBinding: internalViewModel.binding(\.dueTime),
+                        statusBinding: internalViewModel.binding(\.status),
+                        descriptionBinding: internalViewModel.binding(\.description),
+                        remarksBinding: internalViewModel.binding(\.remarks),
+                        quickNotesBinding: internalViewModel.binding(\.quickNotes)
                     )
 
                     Spacer(minLength: 60)
@@ -62,26 +75,22 @@ struct EditView: View {
         .frame(minWidth: 440, minHeight: 380)
         .toolbar {
             EditToolbar(
-                isEditing: $viewModel.isEditing,
-                onSave: { viewModel.save(showConfirmation: true) },
-                onDelete: { viewModel.showDeleteConfirmation = true }
+                isEditing: $internalViewModel.isEditing,
+                onSave: {
+                    // ✅ Save task and reset unsaved state
+                    internalViewModel.save(showConfirmation: true)
+                    hasUnsavedChanges = false
+                },
+                onDelete: { internalViewModel.showDeleteConfirmation = true }
             )
         }
-        // Alerts
-        .alert("Unsaved Changes", isPresented: $viewModel.showUnsavedAlert) {
-            Button("Save Changes") { viewModel.save() }
-            Button("Discard", role: .destructive) { viewModel.discard() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("You have unsaved edits. Save before switching tasks?")
-        }
-        .alert("Delete Task?", isPresented: $viewModel.showDeleteConfirmation) {
-            Button("Delete", role: .destructive) { viewModel.deleteTask() }
+        .alert("Delete Task?", isPresented: $internalViewModel.showDeleteConfirmation) {
+            Button("Delete", role: .destructive) { internalViewModel.deleteTask() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("Are you sure you want to delete this task?")
         }
-        .alert("✅ Task saved successfully!", isPresented: $viewModel.showSaveConfirmation) {
+        .alert("✅ Task saved successfully!", isPresented: $internalViewModel.showSaveConfirmation) {
             Button("OK", role: .cancel) {}
         }
     }
@@ -99,13 +108,14 @@ struct EditView: View {
         }
     }
 
-    // MARK: - Configure (unwrap optional boundary)
+    // MARK: - Configure Task
     private func configure(from newValue: Task?) {
-        if let t = newValue {
-            viewModel.configure(store: store, task: t, onDelete: onDelete)
+        if let task = newValue {
+            internalViewModel.configure(store: store, task: task, onDelete: onDelete)
         } else {
-            // keep a placeholder in the VM when nothing is selected
-            viewModel.configure(store: store, task: Task(title: "New Task", dueDate: .now), onDelete: nil)
+            internalViewModel.configure(store: store, task: Task(title: "New Task", dueDate: .now))
         }
+        // ✅ Always update unsaved state when task switches
+        hasUnsavedChanges = internalViewModel.hasUnsavedChanges()
     }
 }

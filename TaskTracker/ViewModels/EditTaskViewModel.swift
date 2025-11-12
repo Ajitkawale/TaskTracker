@@ -16,12 +16,13 @@ final class EditTaskViewModel: ObservableObject {
     @Published var showSaveConfirmation = false
     @Published var showUnsavedAlert = false
     @Published var showDeleteConfirmation = false
-
     @Published var now = Date()
+
+    // MARK: - Non-private so EditView can access
+    var pendingTask: Task? = nil
 
     private var timer: AnyCancellable?
     private weak var store: StoreTask?
-    
     private var deleteHandler: ((UUID) -> Void)?
 
     init() {
@@ -32,7 +33,7 @@ final class EditTaskViewModel: ObservableObject {
         timer?.cancel()
     }
 
-    // Configure or reconfigure with a store + task
+    // MARK: - Configure
     func configure(store: StoreTask, task: Task, onDelete: ((UUID) -> Void)? = nil) {
         self.store = store
         self.draftTask = task
@@ -40,11 +41,12 @@ final class EditTaskViewModel: ObservableObject {
         self.deleteHandler = onDelete
     }
 
-    // Actions
+    // MARK: - Save / Discard / Delete
     func save(showConfirmation: Bool = true) {
         guard let store = store else { return }
         store.updateTask(draftTask)
         originalSnapshot = draftTask
+        isEditing = false
 
         if showConfirmation {
             showSaveConfirmation = true
@@ -59,12 +61,6 @@ final class EditTaskViewModel: ObservableObject {
         isEditing = false
     }
 
-    func toggleEditing() {
-        withAnimation(.easeInOut(duration: 0.2)) {
-            isEditing.toggle()
-        }
-    }
-
     func deleteTask() {
         deleteHandler?(draftTask.id)
     }
@@ -73,18 +69,53 @@ final class EditTaskViewModel: ObservableObject {
         draftTask != originalSnapshot
     }
 
-    // Timer
+    // MARK: - Task Switching Logic
+    func prepareSwitch(to newTask: Task, store: StoreTask, onDelete: @escaping (UUID) -> Void) -> Bool {
+        if hasUnsavedChanges() {
+            pendingTask = newTask
+            showUnsavedAlert = true
+            return false
+        } else {
+            configure(store: store, task: newTask, onDelete: onDelete)
+            return true
+        }
+    }
+
+    func saveAndSwitch(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
+        save(showConfirmation: false)
+        applyPendingTask(store: store, onDelete: onDelete)
+    }
+
+    func discardAndSwitch(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
+        discard()
+        applyPendingTask(store: store, onDelete: onDelete)
+    }
+
+    private func applyPendingTask(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
+        if let next = pendingTask {
+            configure(store: store, task: next, onDelete: onDelete)
+        }
+        pendingTask = nil
+        showUnsavedAlert = false
+    }
+
+    // MARK: - Timer
     private func startTimer() {
         timer = Timer.publish(every: 60, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in self?.now = Date() }
     }
 
-    // Binding helper for non-optional draftTask
+    // MARK: - Binding Helper
     func binding<Value>(_ keyPath: WritableKeyPath<Task, Value>) -> Binding<Value> {
         Binding(
-            get: { [weak self] in self?.draftTask[keyPath: keyPath] ?? Task(title: "", dueDate: .now)[keyPath: keyPath] },
-            set: { [weak self] newValue in self?.draftTask[keyPath: keyPath] = newValue }
+            get: { [weak self] in
+                self?.draftTask[keyPath: keyPath] ??
+                Task(title: "", dueDate: .now)[keyPath: keyPath]
+            },
+            set: { [weak self] newValue in
+                self?.draftTask[keyPath: keyPath] = newValue
+            }
         )
     }
 }

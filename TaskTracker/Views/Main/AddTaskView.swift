@@ -15,53 +15,65 @@ struct AddTaskView: View {
     @State private var dueDate = Date()
     @State private var dueTime = Date()
     @State private var descriptionText = ""
-    @State private var remarks = ""
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Add New Task")
-                .font(.title2.bold())
-            
-            TextField("Enter task title", text: $title)
+                .font(.title2)
+                .bold()
+
+            // Title field
+            TextField("Enter task title...", text: $title)
                 .textFieldStyle(.roundedBorder)
-            
+
+            // Date + Time Pickers
             HStack {
                 DatePicker("Due Date", selection: $dueDate, displayedComponents: [.date])
                 DatePicker("Time", selection: $dueTime, displayedComponents: [.hourAndMinute])
             }
 
-            TextField("Description", text: $descriptionText, axis: .vertical)
-                .textFieldStyle(.roundedBorder)
-                .lineLimit(2, reservesSpace: true)
-
-            TextField("Remarks (optional)", text: $remarks)
-                .textFieldStyle(.roundedBorder)
+            // Description
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Description")
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+                AutoResizingTextEditor(
+                    placeholder: "Add Description...",
+                    text: $descriptionText
+                )
+                .frame(minHeight: 100)
+                .cornerRadius(10)
+            }
 
             Spacer()
-            
+
+            // Buttons
             HStack {
-                Button("Cancel") { dismiss() }
-                    .buttonStyle(.bordered)
-                
+                Button("Cancel") {
+                    dismiss()
+                }
+                .buttonStyle(.bordered)
+
                 Spacer()
-                
-                Button("Add Task") {
+
+                Button {
                     let newTask = Task(
-                        title: title,
+                        title: title.trimmingCharacters(in: .whitespaces),
                         dueDate: dueDate,
                         dueTime: dueTime,
-                        description: descriptionText,
-                        remarks: remarks
+                        description: descriptionText.trimmingCharacters(in: .whitespaces)
                     )
                     store.addTask(newTask)
                     dismiss()
+                } label: {
+                    Label("Add Task", systemImage: "plus")
                 }
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                 .buttonStyle(.borderedProminent)
             }
         }
         .padding()
-        .frame(minWidth: 400, minHeight: 340)
+        .frame(minWidth: 380, minHeight: 320)
     }
 }
 

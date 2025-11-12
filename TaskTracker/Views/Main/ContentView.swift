@@ -15,77 +15,80 @@ struct ContentView: View {
 
     var body: some View {
         NavigationSplitView {
-            // MARK: - Sidebar (Chart + Task List)
-            VStack(spacing: 0) {
-                // ✅ Top section: Task Overview
-                TaskChartView(tasks: store.tasks)
-                    .frame(height: 170)
-                    .padding(.horizontal, 12)
-                    .padding(.top, 14)
-
-                Divider()
-                    .padding(.horizontal, 8)
-                    .padding(.bottom, 4)
-
-                // ✅ Bottom section: Task list (fills remaining space)
-                List(selection: $selectedTask) {
-                    ForEach(store.tasks) { task in
-                        TaskRowView(task: task, isSelected: selectedTask == task)
-                            .onTapGesture {
-                                selectedTask = task
-                            }
-                    }
-                    .onDelete(perform: store.deleteTask)
-                }
-                .listStyle(.inset)
-                .frame(maxHeight: .infinity) // 🔥 Fill sidebar vertically
-            }
-            // ✅ Sidebar width tuning
-            .frame(minWidth: 380, idealWidth: 420, maxWidth: 460)
-            .navigationTitle("Task Tracker")
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button {
-                        showingAddTask = true
-                    } label: {
-                        Label("Add Task", systemImage: "plus")
-                    }
-                    .help("Add a new task")
-                }
-            }
-            .sheet(isPresented: $showingAddTask) {
-                AddTaskView(store: store)
-            }
-
+            sidebar
         } detail: {
-            // MARK: - Detail Pane
             if selectedTask != nil {
-                DetailInEditView(
+                EditView(
                     store: store,
                     editingTask: $selectedTask,
-                    onSave: { store.saveTasks() },
                     onDelete: { id in
-                        if let index = store.tasks.firstIndex(where: { $0.id == id }) {
-                            store.tasks.remove(at: index)
-                            store.saveTasks()
-                            selectedTask = nil
-                        }
+                        store.deleteTask(by: id)
+                        selectedTask = nil
                     }
                 )
             } else {
-                VStack {
-                    Image(systemName: "square.and.pencil")
-                        .font(.system(size: 40))
-                        .foregroundColor(.gray)
-                        .padding(.bottom, 10)
-                    Text("Select a task to view details")
-                        .font(.title3)
-                        .foregroundColor(.secondary)
+                placeholderView
+            }
+        }
+        .navigationSplitViewColumnWidth(min: 380, ideal: 420, max: 460)
+    }
+
+    // MARK: Sidebar
+    private var sidebar: some View {
+        VStack(spacing: 0) {
+            TaskChartView(tasks: store.tasks)
+                .frame(height: 170)
+                .padding(.horizontal, 12)
+                .padding(.top, 14)
+
+            Divider()
+                .padding(.horizontal, 8)
+                .padding(.bottom, 4)
+
+            List(selection: $selectedTask) {
+                ForEach(store.tasks) { task in
+                    TaskRowView(task: task, isSelected: selectedTask == task)
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            selectedTask = task
+                        }
+                }
+                .onDelete(perform: store.deleteTask)
+            }
+            .listStyle(.inset)
+        }
+        .frame(minWidth: 380, idealWidth: 420, maxWidth: 460)
+        .navigationTitle("Task Tracker")
+        .toolbar {
+            ToolbarItem {
+                // Ensure both icon and text appear
+                Button {
+                    showingAddTask = true
+                } label: {
+                    HStack(spacing: 8) {
+                        Image(systemName: "plus")
+                        Text("Add Task")
+                    }
                 }
             }
         }
-        // ✅ Locks sidebar range (so it never crops)
-        .navigationSplitViewColumnWidth(min: 380, ideal: 420, max: 460)
+        .sheet(isPresented: $showingAddTask) {
+            AddTaskView(store: store)
+        }
+    }
+
+    // MARK: Placeholder
+    private var placeholderView: some View {
+        VStack {
+            Image(systemName: "square.and.pencil")
+                .font(.system(size: 40))
+                .foregroundColor(.gray)
+                .padding(.bottom, 10)
+
+            Text("Select a task to view details")
+                .font(.title3)
+                .foregroundColor(.secondary)
+        }
     }
 }
 

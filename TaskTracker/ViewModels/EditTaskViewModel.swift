@@ -18,9 +18,6 @@ final class EditTaskViewModel: ObservableObject {
     @Published var showDeleteConfirmation = false
     @Published var now = Date()
 
-    // MARK: - Non-private so EditView can access
-    var pendingTask: Task? = nil
-
     private var timer: AnyCancellable?
     private weak var store: StoreTask?
     private var deleteHandler: ((UUID) -> Void)?
@@ -67,36 +64,6 @@ final class EditTaskViewModel: ObservableObject {
 
     func hasUnsavedChanges() -> Bool {
         draftTask != originalSnapshot
-    }
-
-    // MARK: - Task Switching Logic
-    func prepareSwitch(to newTask: Task, store: StoreTask, onDelete: @escaping (UUID) -> Void) -> Bool {
-        if hasUnsavedChanges() {
-            pendingTask = newTask
-            showUnsavedAlert = true
-            return false
-        } else {
-            configure(store: store, task: newTask, onDelete: onDelete)
-            return true
-        }
-    }
-
-    func saveAndSwitch(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
-        save(showConfirmation: false)
-        applyPendingTask(store: store, onDelete: onDelete)
-    }
-
-    func discardAndSwitch(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
-        discard()
-        applyPendingTask(store: store, onDelete: onDelete)
-    }
-
-    private func applyPendingTask(store: StoreTask, onDelete: @escaping (UUID) -> Void) {
-        if let next = pendingTask {
-            configure(store: store, task: next, onDelete: onDelete)
-        }
-        pendingTask = nil
-        showUnsavedAlert = false
     }
 
     // MARK: - Timer

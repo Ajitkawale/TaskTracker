@@ -30,6 +30,7 @@
 		2638C03E2EC4585E00DE7CF4 /* EditSections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditSections.swift; sourceTree = "<group>"; };
 		2638C0402EC4588200DE7CF4 /* EditToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditToolbar.swift; sourceTree = "<group>"; };
 		2638C0422EC45C7500DE7CF4 /* EditTaskViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditTaskViewModel.swift; sourceTree = "<group>"; };
+		2638C0442EC4A5F600DE7CF4 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = README.md; sourceTree = "<group>"; };
 		26A14B4A2EC36E8F006976B0 /* TaskChartView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskChartView.swift; sourceTree = "<group>"; };
 		26A14B4D2EC37FEA006976B0 /* AutoResizingTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoResizingTextEditor.swift; sourceTree = "<group>"; };
 		26A14B512EC3861B006976B0 /* EditView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditView.swift; sourceTree = "<group>"; };
@@ -91,6 +92,7 @@
 		26FE08432EC324A300910FFA = {
 			isa = PBXGroup;
 			children = (
+				2638C0442EC4A5F600DE7CF4 /* README.md */,
 				26FE08662EC3250D00910FFA /* TaskTracker */,
 				26FE084D2EC324A300910FFA /* Products */,
 			);

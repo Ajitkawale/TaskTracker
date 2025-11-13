@@ -30,15 +30,13 @@ enum TaskStatus: String, Codable, CaseIterable, Identifiable {
 
 // Model representing a single task.
 struct Task: Identifiable, Codable, Equatable, Hashable {
-   
     var id: UUID = UUID()
     var title: String
     var dueDate: Date
     var dueTime: Date = Date()
-    var isDone: Bool = false
     var status: TaskStatus = .yetToStart
-   
+
     var description: String = ""       // Optional detailed description.
-    var remarks: String = ""             // Optional remarks or review notes.
-    var quickNotes: String = ""           // Optional quick notes section for small reminders or ideas.
+    var remarks: String = ""           // Optional remarks or review notes.
+    var quickNotes: String = ""        // Optional quick notes section for small reminders or ideas.
 }

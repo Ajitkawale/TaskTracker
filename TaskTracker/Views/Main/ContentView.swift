@@ -18,7 +18,7 @@ struct ContentView: View {
     @State private var showUnsavedAlert = false
     @State private var pendingSelection: Task? = nil
     @State private var editHasUnsavedChanges = false
-    @State private var editViewModel: EditTaskViewModel? = nil 
+    @State private var editViewModel: EditTaskViewModel? = nil
 
     var body: some View {
         // MARK: - Split View Layout
@@ -78,7 +78,7 @@ struct ContentView: View {
                 .padding(.horizontal, 8)
                 .padding(.bottom, 4)
 
-            // Task list view
+            // Task list view — NOTE: onDelete removed as requested
             List {
                 ForEach(store.tasks) { task in
                     TaskRowView(task: task, isSelected: selectedTask == task)
@@ -86,7 +86,7 @@ struct ContentView: View {
                         // Custom tap logic handles unsaved-change protection
                         .onTapGesture { handleTaskSelection(task) }
                 }
-                .onDelete(perform: store.deleteTask)
+                // .onDelete removed because swipe-to-delete is intentionally disabled
             }
             .listStyle(.inset)
         }
